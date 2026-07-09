@@ -1,0 +1,8 @@
+# What: paths excluded from the public template repo.
+#   graphify-out/ and .obsidian/ are regenerable; venv/ is local tooling.
+# Test: after a user runs bootstrap.sh, `git status` stays clean of these.
+venv/
+.venv/
+graphify-out/
+.obsidian/
+.DS_Store

@@ -1,0 +1,5 @@
+{
+  "userIgnoreFilters": ["graphify-out/", "venv/", ".git/"],
+  "showUnsupportedFiles": false,
+  "attachmentFolderPath": "clips"
+}

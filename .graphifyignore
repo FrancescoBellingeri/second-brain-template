@@ -1,0 +1,6 @@
+# What: paths graphify must never index (gitignore syntax). Applies to every
+#   flow — detect, `graphify update`, `graphify extract`, the /graphify skill.
+#   .obsidian/ holds Obsidian's own config + workspace JSON: noise, not knowledge.
+#   (graphify-out/ and venv/ are already skipped by graphify's defaults.)
+# Test: after adding, `graphify update .` and detect must list ZERO .obsidian files.
+.obsidian/
