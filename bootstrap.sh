@@ -41,9 +41,11 @@ case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) echo "NOTE: add ~/.local/bin to 
 say "Vault → $VAULT"
 if [ -d "$VAULT/.git" ]; then
   echo "already a git repo; leaving working tree as-is"
-else
-  [ -n "$BRAIN_REPO" ] || { echo "ERROR: set BRAIN_REPO=<private vault git url> (or clone it yourself to $VAULT)"; exit 1; }
+elif [ -n "$BRAIN_REPO" ]; then
   git clone "$BRAIN_REPO" "$VAULT"
+else
+  echo "no BRAIN_REPO set → creating a LOCAL vault (add a git remote later to back it up / sync)"
+  mkdir -p "$VAULT"; git -C "$VAULT" init -q
 fi
 
 # ---------- 2. folders + skeleton (seed only what's missing) ----------
