@@ -13,7 +13,7 @@
 
 # brain — capture rules
 
-This is a personal second brain: atomic notes → knowledge graph (Graphify) →
+This is your kepra vault: atomic notes → knowledge graph (Graphify) →
 content angles (agency-agents). The project is always a frontmatter field, never
 a folder. Never hardcode a project name.
 

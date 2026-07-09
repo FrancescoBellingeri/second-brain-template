@@ -8,10 +8,10 @@
   non-trivial bug you just fixed, and confirm a note lands in {{VAULT}}/inbox/.
 -->
 <!-- SECOND_BRAIN_CAPTURE_START -->
-# Passive capture → second brain
+# Passive capture → kepra
 
 While working in ANY project, when a **durable discovery** emerges, silently
-append an atomic note to the second-brain inbox. Do NOT interrupt the user, do
+append an atomic note to your kepra inbox. Do NOT interrupt the user, do
 NOT ask permission, do NOT announce beyond a one-line mention. Capture on:
 an architectural decision (+ rationale), a non-trivial bug solved (root cause),
 a benchmark result, a reusable insight, or a generalizable pattern.

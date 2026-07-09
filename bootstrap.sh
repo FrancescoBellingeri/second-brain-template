@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# What: one-shot setup of the second-brain system on a fresh machine. Clones your
+# What: one-shot setup of kepra on a fresh machine. Clones your
 #   private vault, installs graphify + the slash commands + helper scripts + the
 #   5 agency-agents, injects the passive-capture block into ~/.claude/CLAUDE.md,
 #   wires the nightly-commit cron, and points Obsidian at the vault. Idempotent:
 #   safe to re-run. No personal values are baked in — everything is a variable.
 # Usage:
 #   BRAIN_REPO=git@github.com:you/brain.git ./bootstrap.sh
-#   (optional) VAULT=~/second-brain/brain  COMMIT_TIME=21:30  ./bootstrap.sh
+#   (optional) VAULT=~/kepra  COMMIT_TIME=21:30  ./bootstrap.sh
 # How to test: run with VAULT pointing at an existing vault clone (BRAIN_REPO can
 #   be omitted then) — every step is idempotent and should complete without error;
 #   `crontab -l | grep brain-commit`, `ls ~/.claude/commands`, and
@@ -15,7 +15,7 @@ set -euo pipefail
 
 # ---------- config ----------
 BRAIN_REPO="${BRAIN_REPO:-}"                 # private vault git URL (needed only for a fresh clone)
-VAULT="${VAULT:-$HOME/second-brain/brain}"   # where the vault lives
+VAULT="${VAULT:-$HOME/kepra}"                # where the vault lives
 COMMIT_TIME="${COMMIT_TIME:-21:30}"          # HH:MM for the nightly commit
 AGENCY_REPO="https://github.com/msitarzewski/agency-agents.git"
 AGENTS=(content-creator linkedin-content-creator twitter-engager reddit-community-builder ai-citation-strategist)

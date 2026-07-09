@@ -3,7 +3,7 @@ description: Turn recent captures into 3–5 ranked content angles, then hand th
 argument-hint: [project]
 ---
 <!--
-  What: /today reads the second brain and proposes content angles for social.
+  What: /today reads your kepra vault and proposes content angles for social.
   It keeps two sources separate: the Graphify graph for RELATIONS (neighbors,
   clusters) and the raw note frontmatter for EDITORIAL metadata (date,
   content_potential, posted, channels). The mechanical filtering + scoring is
@@ -16,7 +16,7 @@ argument-hint: [project]
   posted[] excluded, and the project arg filtering by frontmatter `project`.
 -->
 
-Generate today's content angles from the second brain.
+Generate today's content angles from your kepra vault.
 Vault = `{{VAULT}}`.
 Optional argument `$1` = project filter (e.g. `/today mango`).
 
