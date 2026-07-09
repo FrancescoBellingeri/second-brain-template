@@ -14,11 +14,12 @@ Not a note app. Not memory for your agent. **A content engine for people who bui
 <br>
 
 ```bash
-git clone https://github.com/FrancescoBellingeri/kepra
-cd kepra && ./bootstrap.sh
+git clone https://github.com/FrancescoBellingeri/kepra kepra-setup
+cd kepra-setup && ./bootstrap.sh
 ```
 
-**One command. ~2 minutes. No API keys.**
+**One command. ~2 minutes. No API keys.** *(Your notes live in `~/kepra`; the
+`kepra-setup` folder is just the installer — delete it after.)*
 
 <br>
 
@@ -94,12 +95,13 @@ Optional: [Obsidian](https://obsidian.md) (to see the graph), a Gemini API key
 (for hands-off nightly refresh).
 
 ```bash
-git clone https://github.com/FrancescoBellingeri/kepra
-cd kepra
+git clone https://github.com/FrancescoBellingeri/kepra kepra-setup
+cd kepra-setup
 ./bootstrap.sh
 ```
 
-That's it. `bootstrap.sh` sets everything up and is safe to re-run.
+That's it. `bootstrap.sh` sets everything up and is safe to re-run. The
+`kepra-setup` folder is only the installer — delete it once you're done.
 
 <details>
 <summary><b>What the one command actually does</b></summary>

@@ -11,7 +11,7 @@
   refreshed (graphify-out/graph.json mtime updates).
 -->
 
-# brain — capture rules
+# kepra — capture rules
 
 This is your kepra vault: atomic notes → knowledge graph (Graphify) →
 content angles (agency-agents). The project is always a frontmatter field, never

@@ -34,11 +34,18 @@ if ! have graphify; then
   python3 -m pip install --user graphifyy \
     || python3 -m pip install --user graphifyy --break-system-packages
 fi
+# Make the /graphify skill available to Claude Code — it's what builds the graph
+# key-free (Claude's own subagents). /capture and /today rely on it.
+graphify install --platform claude >/dev/null 2>&1 \
+  || echo "WARNING: could not install the /graphify skill (run: graphify install --platform claude)"
 mkdir -p "$HOME/.local/bin" "$HOME/.claude/commands" "$HOME/.claude/agents" "$HOME/.cache"
 case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) echo "NOTE: add ~/.local/bin to your PATH";; esac
 
 # ---------- 1. clone / locate the private vault ----------
 say "Vault → $VAULT"
+if [ "$(cd "$VAULT" 2>/dev/null && pwd -P)" = "$TEMPLATE_DIR" ]; then
+  echo "ERROR: VAULT ($VAULT) is the installer folder itself. Pick a different VAULT."; exit 1
+fi
 if [ -d "$VAULT/.git" ]; then
   echo "already a git repo; leaving working tree as-is"
 elif [ -n "$BRAIN_REPO" ]; then
