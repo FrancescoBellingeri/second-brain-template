@@ -29,13 +29,19 @@ cd "$VAULT"
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 \
   || { echo "not a git repo: $VAULT" >&2; exit 1; }
 
-# --- optional semantic graph refresh (key-optional hybrid) ---
+# --- graph refresh ---
+# Deterministic backbone (zero token, <1s) — always. Rebuilds note↔entity /
+# note↔note edges from projects/naming.md.
+if command -v kepra-index >/dev/null 2>&1; then
+  kepra-index "$VAULT" >/dev/null 2>&1 \
+    || echo "$(date '+%F %T') kepra-index failed (continuing to commit)" >&2
+fi
+# Optional LLM enrichment — only if a provider key is set (semantically_similar_to
+# edges on top of the backbone; kepra-index preserves them on later rebuilds).
 if [ -n "${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}" ] && command -v graphify >/dev/null 2>&1; then
-  echo "$(date '+%F %T') graph refresh: gemini"
+  echo "$(date '+%F %T') graph enrichment: gemini"
   graphify extract "$VAULT" --backend gemini >/dev/null 2>&1 \
-    || echo "$(date '+%F %T') graph refresh failed (continuing to commit)" >&2
-else
-  echo "$(date '+%F %T') graph refresh: skipped (no provider key; use /graphify on-demand)"
+    || echo "$(date '+%F %T') enrichment failed (continuing to commit)" >&2
 fi
 
 # --- commit + push ---

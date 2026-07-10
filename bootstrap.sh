@@ -80,7 +80,35 @@ done
 say "Helper scripts → ~/.local/bin/"
 install -m 0755 "$TEMPLATE_DIR/scripts/nightly-commit.sh"  "$HOME/.local/bin/brain-commit"
 install -m 0755 "$TEMPLATE_DIR/scripts/today-candidates.py" "$HOME/.local/bin/today-candidates"
-echo "installed brain-commit, today-candidates"
+install -m 0755 "$TEMPLATE_DIR/scripts/kepra-index.py"     "$HOME/.local/bin/kepra-index"
+echo "installed brain-commit, today-candidates, kepra-index"
+
+# ---------- 4b. auto-index hook + allowlist → ~/.claude/settings.json ----------
+# PostToolUse hook: after any note written under the vault, rebuild the graph
+# (deterministic, zero token). Plus an allowlist so the kepra commands never
+# prompt. Merged into settings.json without clobbering existing config.
+say "Auto-index hook + allowlist → ~/.claude/settings.json"
+KEPRA_VAULT="$VAULT" python3 - "$HOME/.claude/settings.json" <<'PY'
+import json, os, sys
+p = sys.argv[1]; vault = os.environ["KEPRA_VAULT"]
+os.makedirs(os.path.dirname(p), exist_ok=True)
+d = {}
+if os.path.exists(p):
+    try: d = json.load(open(p))
+    except Exception: d = {}
+# allowlist (idempotent)
+allow = d.setdefault("permissions", {}).setdefault("allow", [])
+for perm in ["Bash(kepra-index:*)", "Bash(today-candidates:*)", "Bash(brain-commit:*)"]:
+    if perm not in allow: allow.append(perm)
+# PostToolUse hook that re-indexes when a note under the vault is written
+cmd = ('F=$(python3 -c "import json,sys;print(json.load(sys.stdin).get(\'tool_input\',{}).get(\'file_path\',\'\'))" 2>/dev/null);'
+       f' case "$F" in {vault}/inbox/*|{vault}/permanent/*) kepra-index {vault} >/dev/null 2>&1 || true;; esac; exit 0')
+hooks = d.setdefault("hooks", {}).setdefault("PostToolUse", [])
+if not any(isinstance(h, dict) and "kepra-index" in json.dumps(h) for h in hooks):
+    hooks.append({"matcher": "Write|Edit", "hooks": [{"type": "command", "command": cmd}]})
+json.dump(d, open(p, "w"), indent=2)
+print("settings.json updated (allowlist + auto-index hook)")
+PY
 
 # ---------- 5. global passive-capture block → ~/.claude/CLAUDE.md ----------
 say "Passive-capture block → ~/.claude/CLAUDE.md"

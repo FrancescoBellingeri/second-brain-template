@@ -57,10 +57,15 @@ notes. If an entity isn't in `naming.md` yet and it matters, add it there.
 
 ## Graph
 
-Never hand-edit `graphify-out/` — it is generated. The semantic graph (the
-note-to-note edges) is refreshed automatically at the moments that need it:
-`/capture` and `/today` both run `/graphify --update` (merge-safe). With a
-`GEMINI_API_KEY` set, the nightly job also refreshes it headless.
+Never hand-edit `graphify-out/` — it is generated. The graph is built
+**deterministically** by `kepra-index`: it string-matches the canonical names in
+`projects/naming.md` (and `[[wikilinks]]`) across your notes to link them. Zero
+tokens, under a second. It runs by itself after every note write (hook) and inside
+`/capture`, `/today`, and the nightly commit — so keeping `naming.md` accurate is
+what makes the graph good.
+
+Optionally, `/graphify <vault>` adds LLM `semantically_similar_to` edges on top;
+kepra-index preserves them on later rebuilds. This is opt-in, not the default path.
 
 Query the graph via CLI (not MCP):
 `graphify query "<q>"` · `graphify path "A" "B"` · `graphify explain "X"`.

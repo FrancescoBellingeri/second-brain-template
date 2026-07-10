@@ -36,7 +36,11 @@ Final capture pass for this session. The vault is `{{VAULT}}`.
 
 3. Report what you wrote — one line per note — or say "nothing new to capture."
 
-4. **Refresh the graph** so the new notes gain semantic edges: invoke the
-   `graphify` skill with `--update` on the vault (`/graphify {{VAULT}} --update`).
-   This is merge-safe — it adds to the existing semantic graph, never replaces it.
-   If no notes were written in step 2, skip the refresh.
+4. **Refresh the graph** so the new notes get linked: run one bash command,
+   `kepra-index {{VAULT}}`. It is deterministic and instant (zero tokens) —
+   it rebuilds note↔entity and note↔note edges by string-matching the canonical
+   names in `projects/naming.md`. Do NOT dispatch the `/graphify` subagent skill
+   here (that costs tokens and re-reads the whole corpus). If no notes were
+   written in step 2, you can skip this.
+   *(Optional, occasional: `/graphify {{VAULT}}` adds LLM `semantically_similar_to`
+   edges on top — kepra-index preserves them on future rebuilds.)*

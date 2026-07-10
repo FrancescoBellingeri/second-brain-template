@@ -4,3 +4,11 @@
 #   (graphify-out/ and venv/ are already skipped by graphify's defaults.)
 # Test: after adding, `graphify update .` and detect must list ZERO .obsidian files.
 .obsidian/
+
+# Vault config/docs are not knowledge — exclude from the optional /graphify
+# enrichment run so it only reads real notes (fewer tokens). The deterministic
+# kepra-index reads projects/naming.md directly, not via graphify.
+README.md
+CLAUDE.md
+templates/
+projects/naming.md

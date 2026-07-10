@@ -21,8 +21,9 @@ Vault = `{{VAULT}}`.
 Optional argument `$1` = project filter (e.g. `/today mango`).
 
 ## Phase 1 — Refresh the graph (relations)
-Run `/graphify {{VAULT}} --update` so the graph reflects recent notes (skip only
-if already refreshed this session).
+Run `kepra-index {{VAULT}}` — deterministic, instant, zero tokens. It rebuilds the
+note↔entity / note↔note graph from `projects/naming.md` so connectivity is current.
+(Do NOT dispatch the `/graphify` subagent skill here.)
 
 ## Phase 2 — Get ranked candidates (deterministic)
 Run:

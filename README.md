@@ -151,10 +151,14 @@ Your notes stay in *your* private repo. kepra — this public repo — never see
   content potential, channels, what's already shipped. `/today` uses this for ranking.
   Editorial state never pollutes the graph.
 
-**Key-free by default.** Graph building runs on Claude Code's own subagents — *Claude
-itself is the model.* No provider key, no per-token bill. A `GEMINI_API_KEY` is optional
-and only adds a headless nightly refresh; without it, the graph refreshes whenever you
-run `/capture` or `/today`.
+**Zero-token graph, by design.** The graph is built **deterministically** by
+`kepra-index`: it string-matches the canonical names in `projects/naming.md` (and your
+`[[wikilinks]]`) across your notes to link them, then clusters them. No LLM, no API key,
+no per-token bill — it runs in well under a second, every time a note is written. So the
+graph is *free and always fresh*. (Optional: run `/graphify` to layer LLM
+"semantically-similar" edges on top; they're preserved on later rebuilds.) This is why
+the whole capture → graph → angles loop costs **zero tokens** beyond the conversation
+itself — and why keeping `naming.md` accurate is the one thing that makes the graph good.
 
 **Your note = one atomic idea.** 5–15 lines, one thought, entities named consistently
 (there's a `projects/naming.md` registry so the same thing always links to itself).
