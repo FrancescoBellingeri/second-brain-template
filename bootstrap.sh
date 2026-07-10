@@ -15,11 +15,15 @@ set -euo pipefail
 
 # ---------- config ----------
 BRAIN_REPO="${BRAIN_REPO:-}"                 # private vault git URL (needed only for a fresh clone)
-VAULT="${VAULT:-$HOME/kepra}"                # where the vault lives
 COMMIT_TIME="${COMMIT_TIME:-21:30}"          # HH:MM for the nightly commit
 AGENCY_REPO="https://github.com/msitarzewski/agency-agents.git"
 AGENTS=(content-creator linkedin-content-creator twitter-engager reddit-community-builder ai-citation-strategist)
 TEMPLATE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# vault defaults to a SIBLING of wherever kepra-setup was cloned (same parent
+# dir, e.g. ~/personal/kepra next to ~/personal/kepra-setup) — never nested
+# inside the installer, so the two git repos (public installer / private notes)
+# never collide, but they're still easy to find side by side.
+VAULT="${VAULT:-$(dirname "$TEMPLATE_DIR")/kepra}"
 
 say(){ printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 have(){ command -v "$1" >/dev/null 2>&1; }

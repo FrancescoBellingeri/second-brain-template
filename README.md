@@ -18,8 +18,9 @@ git clone https://github.com/FrancescoBellingeri/kepra kepra-setup
 cd kepra-setup && ./bootstrap.sh
 ```
 
-**One command. ~2 minutes. No API keys.** *(Your notes live in `~/kepra`; the
-`kepra-setup` folder is just the installer — delete it after.)*
+**One command. ~2 minutes. No API keys.** *(Your notes land in a `kepra` folder
+right next to `kepra-setup`; the `kepra-setup` folder is just the installer —
+delete it after.)*
 
 <br>
 
@@ -103,10 +104,24 @@ cd kepra-setup
 That's it. `bootstrap.sh` sets everything up and is safe to re-run. The
 `kepra-setup` folder is only the installer — delete it once you're done.
 
+**Where things end up.** The vault (your private notes) is always created as a
+**sibling** of wherever you cloned `kepra-setup` — never inside it. Two separate
+git repos, side by side, so your notes and the public installer never mix:
+
+```
+~/personal/
+├── kepra-setup/   ← this repo (public installer — delete after setup)
+└── kepra/         ← your vault (private notes, own git history)
+```
+
+If you cloned into `~/dev/kepra-setup` instead, your vault lands at
+`~/dev/kepra`. Override with `VAULT=/anywhere ./bootstrap.sh` if you want it
+somewhere else entirely.
+
 <details>
 <summary><b>What the one command actually does</b></summary>
 
-- Creates your vault at `~/kepra` (a local git repo — add a remote anytime for backup/sync)
+- Creates your vault next to `kepra-setup` (a local git repo — add a remote anytime for backup/sync)
 - Installs [Graphify](https://github.com/safishamsi/graphify) (the graph engine)
 - Installs the commands `/capture`, `/today`, `/review` into Claude Code
 - Installs the helper scripts (`brain-commit`, `today-candidates`)
@@ -204,7 +219,7 @@ Everything is an environment variable — nothing personal is baked into this re
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `VAULT` | `~/kepra` | where your notes live |
+| `VAULT` | sibling of `kepra-setup` (e.g. `~/personal/kepra`) | where your notes live |
 | `BRAIN_REPO` | *(none)* | private git URL for your notes (omit for a local-only vault) |
 | `COMMIT_TIME` | `21:30` | nightly auto-commit time (`HH:MM`) |
 | `GEMINI_API_KEY` | *(none)* | optional — enables headless nightly graph refresh |
