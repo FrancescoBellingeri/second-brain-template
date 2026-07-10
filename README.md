@@ -92,8 +92,9 @@ drafts it in your voice. You approve — it's marked shipped and never nags you 
 ## Quickstart
 
 **Requirements:** [Claude Code](https://claude.com/claude-code), `git`, `python3`.
-Optional: [Obsidian](https://obsidian.md) (to see the graph), a Gemini API key
-(for hands-off nightly refresh).
+Optional: [Obsidian](https://obsidian.md) (to see the graph), any one LLM
+provider key — Anthropic, OpenAI, Gemini, DeepSeek, or Kimi — for hands-off
+nightly graph enrichment.
 
 ```bash
 git clone https://github.com/FrancescoBellingeri/kepra kepra-setup
@@ -222,11 +223,16 @@ Everything is an environment variable — nothing personal is baked into this re
 | `VAULT` | sibling of `kepra-setup` (e.g. `~/personal/kepra`) | where your notes live |
 | `BRAIN_REPO` | *(none)* | private git URL for your notes (omit for a local-only vault) |
 | `COMMIT_TIME` | `21:30` | nightly auto-commit time (`HH:MM`) |
-| `GEMINI_API_KEY` | *(none)* | optional — enables headless nightly graph refresh |
+| `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) / `DEEPSEEK_API_KEY` / `MOONSHOT_API_KEY` | *(none)* | optional, pick any **one** — enables headless nightly graph enrichment; graphify auto-detects which provider from whichever is set |
 
 ```bash
 VAULT=~/brain COMMIT_TIME=23:00 ./bootstrap.sh
 ```
+
+> The deterministic graph (`kepra-index`) never needs a key — these only
+> unlock the *optional* LLM enrichment layer described [above](#under-the-hood-for-the-curious).
+> Not supported: OpenRouter — graphify has no OpenRouter backend today, so it
+> can't be pointed there yet.
 
 ---
 
@@ -234,8 +240,10 @@ VAULT=~/brain COMMIT_TIME=23:00 ./bootstrap.sh
 
 - **Your notes are yours.** They live in your vault (local, or your own private repo).
   This public repo ships only structure, templates, and the installer.
-- **Nothing leaves your machine by default.** Key-free graph building uses your local
-  Claude Code session. Only if you opt into a Gemini key does note text go to Google.
+- **Nothing leaves your machine by default.** The deterministic graph (`kepra-index`)
+  never sends anything anywhere. Key-free semantic enrichment uses your local Claude
+  Code session. Only if you opt into a provider key (Anthropic, OpenAI, Gemini,
+  DeepSeek, Kimi) does note text go to that provider — and only that one.
 
 ---
 
@@ -259,8 +267,10 @@ is automatic, and the commands are one word each. If you can run `git clone`, yo
 <details>
 <summary><b>Do I need an API key or a subscription for the graph?</b></summary>
 
-No. The graph is built by Claude Code itself. A Gemini key is optional and only adds
-hands-off nightly refresh.
+No. The base graph is built deterministically (`kepra-index`, zero tokens, no key),
+and semantic enrichment on top of it is built by Claude Code itself, key-free. An
+LLM provider key (Anthropic, OpenAI, Gemini, DeepSeek, or Kimi — your pick) is
+optional and only adds hands-off nightly enrichment via `brain-commit`.
 </details>
 
 <details>

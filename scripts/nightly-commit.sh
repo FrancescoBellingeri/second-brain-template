@@ -3,13 +3,19 @@
 #   graph refresh, then auto-commit + push. Vault path is an ARGUMENT, never
 #   hardcoded, so this is reusable across machines.
 #
-#   Graph refresh is KEY-OPTIONAL (hybrid design — no provider key required):
-#     - If GEMINI_API_KEY or GOOGLE_API_KEY is set → run a headless semantic
-#       extract (`graphify extract --backend gemini`) so the note-to-note graph
-#       is rebuilt automatically overnight.
-#     - If no key is set → skip the refresh. The semantic graph is instead kept
-#       current by running the `/graphify` skill on-demand inside a Claude Code
-#       session (zero external dependency, Claude itself is the LLM).
+#   Graph refresh is KEY-OPTIONAL and PROVIDER-AGNOSTIC (hybrid design — no
+#   single vendor required):
+#     - If any LLM provider credential is set (ANTHROPIC_API_KEY, OPENAI_API_KEY,
+#       GEMINI_API_KEY/GOOGLE_API_KEY, DEEPSEEK_API_KEY, MOONSHOT_API_KEY, an
+#       OLLAMA_BASE_URL, or AWS creds for Bedrock) → run a headless semantic
+#       extract (`graphify extract`, no --backend — graphify auto-detects which
+#       one from whatever's in env) so the note-to-note graph is enriched
+#       automatically overnight.
+#     - If no credential is set → skip the enrichment. The deterministic
+#       backbone (kepra-index, below) already keeps the graph usable; the
+#       semantic layer can still be added on-demand by running the `/graphify`
+#       skill inside a Claude Code session (zero external dependency, Claude
+#       itself is the LLM).
 #   A failed refresh never blocks the commit.
 #
 #   Note: graphify-out/ is gitignored (regenerable), so the refresh never adds
@@ -21,7 +27,8 @@
 # How to test:
 #   1. No key set → prints "graph refresh: skipped (no provider key ...)",
 #      then commits if a note changed, else "nothing to commit".
-#   2. GEMINI_API_KEY set → prints "graph refresh: gemini" and rebuilds the graph.
+#   2. Any supported provider key set → prints "graph enrichment: LLM
+#      (auto-detected provider)" and enriches the graph.
 set -euo pipefail
 
 VAULT="${1:?usage: nightly-commit.sh /path/to/vault}"
@@ -36,11 +43,14 @@ if command -v kepra-index >/dev/null 2>&1; then
   kepra-index "$VAULT" >/dev/null 2>&1 \
     || echo "$(date '+%F %T') kepra-index failed (continuing to commit)" >&2
 fi
-# Optional LLM enrichment — only if a provider key is set (semantically_similar_to
-# edges on top of the backbone; kepra-index preserves them on later rebuilds).
-if [ -n "${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}" ] && command -v graphify >/dev/null 2>&1; then
-  echo "$(date '+%F %T') graph enrichment: gemini"
-  graphify extract "$VAULT" --backend gemini >/dev/null 2>&1 \
+# Optional LLM enrichment — only if some provider credential is set
+# (semantically_similar_to edges on top of the backbone; kepra-index preserves
+# them on later rebuilds). No --backend: graphify auto-detects which provider
+# to use from whatever key is present, so this never hardcodes a single vendor.
+LLM_CRED="${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}${ANTHROPIC_API_KEY:-}${OPENAI_API_KEY:-}${DEEPSEEK_API_KEY:-}${MOONSHOT_API_KEY:-}${OLLAMA_BASE_URL:-}${AWS_PROFILE:-}${AWS_REGION:-}${AWS_DEFAULT_REGION:-}"
+if [ -n "$LLM_CRED" ] && command -v graphify >/dev/null 2>&1; then
+  echo "$(date '+%F %T') graph enrichment: LLM (auto-detected provider)"
+  graphify extract "$VAULT" >/dev/null 2>&1 \
     || echo "$(date '+%F %T') enrichment failed (continuing to commit)" >&2
 fi
 

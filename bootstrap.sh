@@ -27,6 +27,12 @@ VAULT="${VAULT:-$(dirname "$TEMPLATE_DIR")/kepra}"
 
 say(){ printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 have(){ command -v "$1" >/dev/null 2>&1; }
+# True if any LLM provider credential graphify knows how to use is present.
+# graphify auto-detects WHICH one from these (priority: gemini > kimi > claude
+# > openai > deepseek > bedrock > ollama) — we never hardcode a single vendor.
+llm_key_present(){
+  [ -n "${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}${ANTHROPIC_API_KEY:-}${OPENAI_API_KEY:-}${DEEPSEEK_API_KEY:-}${MOONSHOT_API_KEY:-}${OLLAMA_BASE_URL:-}${AWS_PROFILE:-}${AWS_REGION:-}${AWS_DEFAULT_REGION:-}" ]
+}
 
 # ---------- 0. preflight ----------
 say "Preflight"
@@ -149,15 +155,20 @@ if have crontab; then
   echo "cron set: $LINE"
 fi
 
-# ---------- 8. knowledge graph (key-optional) ----------
+# ---------- 8. knowledge graph ----------
 say "Knowledge graph"
-if [ -n "${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}" ]; then
-  graphify extract "$VAULT" --backend gemini \
-    && echo "graph built with gemini" \
-    || echo "graph build failed — run '/graphify $VAULT' in a Claude Code session"
+echo "Deterministic backbone: already live — kepra-index reindexes on every note"
+echo "write (the hook installed in step 4b), zero tokens, no key needed."
+if llm_key_present; then
+  # No --backend: graphify auto-detects which provider key is set (Anthropic,
+  # OpenAI, Gemini, DeepSeek, Kimi, Bedrock, or local Ollama).
+  graphify extract "$VAULT" \
+    && echo "optional LLM enrichment: done (semantically_similar_to edges added)" \
+    || echo "LLM enrichment failed — harmless, the deterministic graph above still works. Retry anytime with '/graphify $VAULT' in a Claude Code session."
 else
-  echo "No GEMINI_API_KEY set → build the graph key-free (Claude is the LLM):"
-  echo "    open a Claude Code session and run:  /graphify $VAULT"
+  echo "No LLM provider key set (ANTHROPIC_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY /"
+  echo "DEEPSEEK_API_KEY / MOONSHOT_API_KEY) → skipping optional enrichment for now."
+  echo "Enrich anytime, key-free, from inside Claude Code:  /graphify $VAULT"
 fi
 
 # ---------- 9. Obsidian ----------
