@@ -102,7 +102,7 @@ for perm in ["Bash(kepra-index:*)", "Bash(today-candidates:*)", "Bash(brain-comm
     if perm not in allow: allow.append(perm)
 # PostToolUse hook that re-indexes when a note under the vault is written
 cmd = ('F=$(python3 -c "import json,sys;print(json.load(sys.stdin).get(\'tool_input\',{}).get(\'file_path\',\'\'))" 2>/dev/null);'
-       f' case "$F" in {vault}/inbox/*|{vault}/permanent/*) kepra-index {vault} >/dev/null 2>&1 || true;; esac; exit 0')
+       f' case "$F" in {vault}/inbox/*|{vault}/permanent/*) "$HOME/.local/bin/kepra-index" {vault} >/dev/null 2>&1 || true;; esac; exit 0')
 hooks = d.setdefault("hooks", {}).setdefault("PostToolUse", [])
 if not any(isinstance(h, dict) and "kepra-index" in json.dumps(h) for h in hooks):
     hooks.append({"matcher": "Write|Edit", "hooks": [{"type": "command", "command": cmd}]})
