@@ -1,0 +1,25 @@
+{
+  "name": "kepra-graph-viewer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Maintainer-only build: produces the single self-contained graph.html template shipped as ../assets/graph-viewer.template.html. Never run by bootstrap.sh or by end users.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "tsc -b --noEmit"
+  },
+  "dependencies": {
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-force-graph-2d": "^1.27.4"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "~5.7.2",
+    "vite": "^5.4.21",
+    "vite-plugin-singlefile": "^2.3.3"
+  }
+}

@@ -18,7 +18,7 @@ git clone https://github.com/FrancescoBellingeri/kepra kepra-setup
 cd kepra-setup && ./bootstrap.sh
 ```
 
-**One command. ~2 minutes. No API keys.** *(Your notes land in a `kepra` folder
+**One command. ~2 minutes. No API keys.** *(Your notes land in a `my-kepra` folder
 right next to `kepra-setup`; the `kepra-setup` folder is just the installer —
 delete it after.)*
 
@@ -112,12 +112,17 @@ git repos, side by side, so your notes and the public installer never mix:
 ```
 ~/personal/
 ├── kepra-setup/   ← this repo (public installer — delete after setup)
-└── kepra/         ← your vault (private notes, own git history)
+└── my-kepra/      ← your vault (private notes, own git history)
 ```
 
 If you cloned into `~/dev/kepra-setup` instead, your vault lands at
-`~/dev/kepra`. Override with `VAULT=/anywhere ./bootstrap.sh` if you want it
+`~/dev/my-kepra`. Override with `VAULT=/anywhere ./bootstrap.sh` if you want it
 somewhere else entirely.
+
+*(Why `my-kepra` and not `kepra`? If you ever fork this installer to
+contribute, GitHub names the fork `<you>/kepra` by default — so a vault
+repo also named `kepra` under your account would collide with your own
+fork. `my-kepra` sidesteps that for everyone, by default.)*
 
 <details>
 <summary><b>What the one command actually does</b></summary>
@@ -125,7 +130,7 @@ somewhere else entirely.
 - Creates your vault next to `kepra-setup` (a local git repo — add a remote anytime for backup/sync)
 - Installs [Graphify](https://github.com/safishamsi/graphify) (the graph engine)
 - Installs the commands `/capture`, `/today`, `/review` into Claude Code
-- Installs the helper scripts (`brain-commit`, `today-candidates`)
+- Installs the helper scripts (`brain-commit`, `today-candidates`) and the graph viewer template
 - Turns on **automatic capture** everywhere via a small block in your global `~/.claude/CLAUDE.md`
 - Installs the 5 content agents from [agency-agents](https://github.com/msitarzewski/agency-agents)
 - Schedules a nightly commit of your vault (default 21:30)
@@ -176,6 +181,15 @@ graph is *free and always fresh*. (Optional: run `/graphify` to layer LLM
 the whole capture → graph → angles loop costs **zero tokens** beyond the conversation
 itself — and why keeping `naming.md` accurate is the one thing that makes the graph good.
 
+**A custom viewer, not the graphify default.** `graphify-out/graph.html` is a
+[react-force-graph-2d](https://github.com/vasturiano/react-force-graph) viewer built
+for kepra (glow, theme-aware colors by note/entity type, search, a node inspector) —
+it rebuilds automatically alongside `graph.json` on every note write, so there's no
+manual `graphify export html` step. It's a single offline file: open it straight from
+`graphify-out/` in any browser. *(One caveat: running the full `/graphify` skill directly
+— e.g. via `/review`'s `--update` — uses graphify's own built-in viewer for that one run;
+writing another note, or a plain `kepra-index <vault>`, regenerates the nicer one on top.)*
+
 **Your note = one atomic idea.** 5–15 lines, one thought, entities named consistently
 (there's a `projects/naming.md` registry so the same thing always links to itself).
 Small notes make a rich graph.
@@ -220,7 +234,7 @@ Everything is an environment variable — nothing personal is baked into this re
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `VAULT` | sibling of `kepra-setup` (e.g. `~/personal/kepra`) | where your notes live |
+| `VAULT` | sibling of `kepra-setup` (e.g. `~/personal/my-kepra`) | where your notes live |
 | `BRAIN_REPO` | *(none)* | private git URL for your notes (omit for a local-only vault) |
 | `COMMIT_TIME` | `21:30` | nightly auto-commit time (`HH:MM`) |
 | `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) / `DEEPSEEK_API_KEY` / `MOONSHOT_API_KEY` | *(none)* | optional, pick any **one** — enables headless nightly graph enrichment; graphify auto-detects which provider from whichever is set |
@@ -299,14 +313,17 @@ never overwrites your content.
 ## Built on
 
 - **[Graphify](https://github.com/safishamsi/graphify)** — the knowledge-graph engine
+- **[react-force-graph](https://github.com/vasturiano/react-force-graph)** — the graph.html viewer (see `viewer/`)
 - **[agency-agents](https://github.com/msitarzewski/agency-agents)** — the content specialist agents
 - **[Claude Code](https://claude.com/claude-code)** — the runtime that ties it together
-- **[Obsidian](https://obsidian.md)** — optional graph viewer
+- **[Obsidian](https://obsidian.md)** — optional secondary graph/note viewer
 
 ## Contributing
 
 Issues and PRs welcome — better capture heuristics, more channels, new ranking signals.
-Keep personal content out of this repo; it's the public skeleton.
+Keep personal content out of this repo; it's the public skeleton. Touching the graph
+viewer's look (`viewer/`) needs Node just for that one directory — see `viewer/README.md`;
+nothing else in this repo needs it, and end users never do.
 
 ## License
 

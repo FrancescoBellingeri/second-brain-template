@@ -7,6 +7,10 @@
 #   with `graphify query/path/explain` and today-candidates. No LLM. Runs <1s.
 #   An occasional `/graphify` run can still enrich this graph with semantic
 #   (`semantically_similar_to`) edges — those are preserved across rebuilds.
+#   Also renders graphify-out/graph.html from the custom react-force-graph-2d
+#   viewer template installed by bootstrap.sh (~/.local/share/kepra/graph-viewer.html),
+#   falling back to graphify's own built-in viewer if that template isn't
+#   installed yet. A viewer-rendering failure never blocks graph.json itself.
 # Usage: kepra-index <vault>
 # How to test:
 #   kepra-index <vault>
@@ -35,6 +39,53 @@ def _ensure_graphify_interpreter():
         cand = first[2:].strip().split()[0]
         if os.path.exists(cand) and os.path.realpath(cand) != os.path.realpath(sys.executable):
             os.execv(cand, [cand] + sys.argv)
+
+# ---------- graph.html rendering ----------
+def _viewer_template_path():
+    """Where the custom react-force-graph-2d viewer template lives. Checked
+    in order: an explicit override (used by the maintainer build/test flow),
+    then the location bootstrap.sh installs it to. Returns None if neither
+    exists — callers must degrade gracefully, not crash."""
+    override = os.environ.get("KEPRA_VIEWER_TEMPLATE")
+    if override and os.path.exists(override):
+        return override
+    installed = os.path.expanduser("~/.local/share/kepra/graph-viewer.html")
+    return installed if os.path.exists(installed) else None
+
+def render_graph_html(graph_json_path, html_out_path, G=None, communities=None):
+    """Render graphify-out/graph.html. Prefers the custom viewer template;
+    falls back to graphify's own built-in HTML export if the template isn't
+    installed (e.g. bootstrap.sh hasn't been re-run since this feature
+    shipped) and a live graph is available to render from. Never raises —
+    a broken viewer must never take graph.json down with it."""
+    try:
+        template = _viewer_template_path()
+        if template:
+            graph_text = open(graph_json_path, encoding="utf-8").read()
+            # `/` only ever appears inside JSON string values (never in JSON
+            # structure), so escaping "</" -> "<\/" is always JSON-safe and
+            # stops any "</script" inside note content from breaking out of
+            # the tag it's injected into. Standard JSON-in-<script> trick.
+            safe = graph_text.replace("</", "<\\/")
+            tpl = open(template, encoding="utf-8").read()
+            if "__KEPRA_GRAPH_DATA__" not in tpl:
+                raise RuntimeError("viewer template missing its data placeholder")
+            open(html_out_path, "w", encoding="utf-8").write(
+                tpl.replace("__KEPRA_GRAPH_DATA__", safe, 1))
+            return
+        if G is not None and communities is not None:
+            from graphify.export import to_html as graphify_to_html
+            graphify_to_html(G, communities, html_out_path)
+            print("[kepra-index] custom viewer not installed "
+                  "(~/.local/share/kepra/graph-viewer.html) — used graphify's "
+                  "built-in viewer instead. Re-run bootstrap.sh to get the "
+                  "upgraded one.", file=sys.stderr)
+        else:
+            print("[kepra-index] no viewer template and no graph available "
+                  "for a fallback render — skipped graph.html this run.", file=sys.stderr)
+    except Exception as ex:
+        print(f"[kepra-index] graph.html render failed ({ex}); graph.json is unaffected.",
+              file=sys.stderr)
 
 # ---------- helpers ----------
 def norm_id(s):
@@ -205,6 +256,7 @@ def main():
         communities = cluster(G)
         to_json(G, communities, out_path)
         ncomm = len(communities)
+        render_graph_html(out_path, os.path.join(out_dir, "graph.html"), G, communities)
     except Exception as ex:
         # Fallback: write node-link graph.json directly (still readable by
         # today-candidates; graphify CLI needs it too but this keeps us running).
@@ -214,6 +266,7 @@ def main():
                    "nodes": nodes, "links": edges}, open(out_path, "w"), ensure_ascii=False)
         ncomm = 1
         print(f"[kepra-index] graphify build unavailable ({ex}); wrote raw graph.json", file=sys.stderr)
+        render_graph_html(out_path, os.path.join(out_dir, "graph.html"))
 
     print(f"[kepra-index] {len(note_recs)} notes, {len(used_entities)} entities, "
           f"{len(edges)} edges, {ncomm} communities → {out_path}")

@@ -1,8 +1,15 @@
 # What: paths excluded from the public template repo.
 #   graphify-out/ and .obsidian/ are regenerable; venv/ is local tooling.
+#   viewer/node_modules and viewer/dist are maintainer-only build artifacts —
+#   viewer/README.md documents rebuilding assets/graph-viewer.template.html
+#   (which IS committed) from them.
 # Test: after a user runs bootstrap.sh, `git status` stays clean of these.
 venv/
 .venv/
 graphify-out/
 .obsidian/
 .DS_Store
+viewer/node_modules/
+viewer/dist/
+__pycache__/
+*.pyc

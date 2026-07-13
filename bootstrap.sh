@@ -6,7 +6,7 @@
 #   safe to re-run. No personal values are baked in — everything is a variable.
 # Usage:
 #   BRAIN_REPO=git@github.com:you/brain.git ./bootstrap.sh
-#   (optional) VAULT=~/kepra  COMMIT_TIME=21:30  ./bootstrap.sh
+#   (optional) VAULT=~/my-kepra  COMMIT_TIME=21:30  ./bootstrap.sh
 # How to test: run with VAULT pointing at an existing vault clone (BRAIN_REPO can
 #   be omitted then) — every step is idempotent and should complete without error;
 #   `crontab -l | grep brain-commit`, `ls ~/.claude/commands`, and
@@ -20,10 +20,12 @@ AGENCY_REPO="https://github.com/msitarzewski/agency-agents.git"
 AGENTS=(content-creator linkedin-content-creator twitter-engager reddit-community-builder ai-citation-strategist)
 TEMPLATE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # vault defaults to a SIBLING of wherever kepra-setup was cloned (same parent
-# dir, e.g. ~/personal/kepra next to ~/personal/kepra-setup) — never nested
+# dir, e.g. ~/personal/my-kepra next to ~/personal/kepra-setup) — never nested
 # inside the installer, so the two git repos (public installer / private notes)
-# never collide, but they're still easy to find side by side.
-VAULT="${VAULT:-$(dirname "$TEMPLATE_DIR")/kepra}"
+# never collide, but they're still easy to find side by side. Named "my-kepra"
+# (not "kepra") so a BRAIN_REPO you push this to never collides with a fork of
+# the public installer repo, which GitHub names <you>/kepra by default.
+VAULT="${VAULT:-$(dirname "$TEMPLATE_DIR")/my-kepra}"
 
 say(){ printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 have(){ command -v "$1" >/dev/null 2>&1; }
@@ -92,6 +94,9 @@ install -m 0755 "$TEMPLATE_DIR/scripts/nightly-commit.sh"  "$HOME/.local/bin/bra
 install -m 0755 "$TEMPLATE_DIR/scripts/today-candidates.py" "$HOME/.local/bin/today-candidates"
 install -m 0755 "$TEMPLATE_DIR/scripts/kepra-index.py"     "$HOME/.local/bin/kepra-index"
 echo "installed brain-commit, today-candidates, kepra-index"
+mkdir -p "$HOME/.local/share/kepra"
+install -m 0644 "$TEMPLATE_DIR/assets/graph-viewer.template.html" "$HOME/.local/share/kepra/graph-viewer.html"
+echo "installed graph-viewer.html (graphify-out/graph.html now auto-rebuilds on every note write)"
 
 # ---------- 4b. auto-index hook + allowlist → ~/.claude/settings.json ----------
 # PostToolUse hook: after any note written under the vault, rebuild the graph
@@ -201,3 +206,19 @@ cat <<EOF
     2. Build the graph:  /graphify $VAULT
     3. Capture a discovery, then run  /today  to get content angles.
 EOF
+
+# bootstrap.sh never creates a remote for you (no gh dependency, no silent
+# push to a third-party service) — but if you're local-only, tell you exactly
+# how to fix that in one copy-paste, right now while it's top of mind.
+if ! git -C "$VAULT" remote | grep -q .; then
+  BRANCH="$(git -C "$VAULT" symbolic-ref --short HEAD 2>/dev/null || echo master)"
+  cat <<EOF
+  Backup: your vault has no git remote yet — it's local-only for now.
+    1. Create an empty PRIVATE repo on GitHub (do NOT initialize it with a README)
+    2. git -C "$VAULT" remote add origin git@github.com:<you>/my-kepra.git
+    3. git -C "$VAULT" add -A && git -C "$VAULT" commit -m "init vault"
+    4. git -C "$VAULT" push -u origin $BRANCH
+    After that, the nightly cron pushes automatically.
+
+EOF
+fi

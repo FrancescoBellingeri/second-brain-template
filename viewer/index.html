@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="description" content="kepra knowledge graph — notes and entities, linked." />
+    <title>kepra · graph</title>
+    <script>
+      // Resolve the theme before first paint to avoid a flash of the wrong
+      // theme. Mirrors src/theme.ts (keep in sync).
+      (function () {
+        try {
+          var pref = localStorage.getItem('kepra-theme') || 'system'
+          var dark =
+            pref === 'dark' ||
+            (pref !== 'light' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches)
+          var resolved = dark ? 'dark' : 'light'
+          document.documentElement.dataset.theme = resolved
+          document.documentElement.style.colorScheme = resolved
+        } catch (e) {
+          document.documentElement.dataset.theme = 'dark'
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!--
+      Filled in by kepra-index.py's render_graph_html() at generation time —
+      the placeholder text inside the script tag below is replaced verbatim
+      with the contents of graph.json (with every "</" escaped to "<\/" so
+      note text can never break out of this tag). A JSON island, not an
+      inline `window.X = {...}` assignment, so note content never gets
+      interpreted as JavaScript. If this file is opened as-is
+      (unbuilt/un-injected), the placeholder is invalid JSON and main.tsx
+      shows the "graph data missing" fallback instead of crashing.
+
+      IMPORTANT: this exact placeholder token must appear EXACTLY ONCE in the
+      built output (not in a comment, not duplicated in bundled JS) — the
+      Python injector replaces only the first match. Keep it that way if you
+      edit this file.
+    -->
+    <script type="application/json" id="kepra-graph-data">__KEPRA_GRAPH_DATA__</script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

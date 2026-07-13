@@ -1,0 +1,568 @@
+/* ============================================================================
+   kepra graph viewer — warm charcoal canvas, glowing force graph.
+   Tokens ported from a prior project's design system, trimmed to what this
+   single-view viewer needs. Node/edge colors live in constants.ts (canvas
+   painting can't read CSS custom properties) — this file is DOM chrome only.
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: oklch(0.16 0.008 70);
+  --surface: oklch(0.205 0.009 70);
+  --surface-2: oklch(0.238 0.01 70);
+  --surface-3: oklch(0.285 0.011 70);
+  --border: oklch(0.34 0.012 70);
+  --border-soft: oklch(1 0 0 / 0.07);
+  --border-strong: oklch(0.42 0.014 70);
+
+  --text: oklch(0.95 0.008 80);
+  --text-muted: oklch(0.75 0.012 75);
+  --text-faint: oklch(0.62 0.012 75);
+
+  /* Accent = the validated highlight/accent hex from constants.ts (dark). */
+  --accent: #d95926;
+  --accent-soft: rgb(217 89 38 / 0.16);
+  --accent-line: rgb(217 89 38 / 0.4);
+
+  --graph-radial: oklch(0.2 0.012 75 / 0.6);
+  --glass-bg: oklch(0.2 0.009 70 / 0.72);
+  --glass-bg-strong: oklch(0.2 0.009 70 / 0.86);
+  --scrim: oklch(0.16 0.008 70 / 0.6);
+
+  --mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  --r-sm: 8px;
+  --r: 12px;
+  --r-lg: 16px;
+
+  --shadow-sm: 0 2px 8px oklch(0 0 0 / 0.3);
+  --shadow: 0 12px 32px oklch(0 0 0 / 0.4);
+  --shadow-lg: 0 24px 64px oklch(0 0 0 / 0.55);
+  --inner-hi: inset 0 1px 0 oklch(1 0 0 / 0.04);
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --t-fast: 140ms;
+  --t: 200ms;
+
+  --z-overlay: 10;
+  --z-toolbar: 20;
+  --z-inspector: 30;
+  --z-toast: 60;
+
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --bg: oklch(0.97 0.004 85);
+  --surface: oklch(0.99 0.003 85);
+  --surface-2: oklch(0.962 0.004 85);
+  --surface-3: oklch(0.925 0.006 85);
+  --border: oklch(0.87 0.008 85);
+  --border-soft: oklch(0 0 0 / 0.09);
+  --border-strong: oklch(0.78 0.01 85);
+
+  --text: oklch(0.27 0.02 75);
+  --text-muted: oklch(0.44 0.02 75);
+  --text-faint: oklch(0.52 0.018 75);
+
+  --accent: #eb6834;
+  --accent-soft: rgb(235 104 52 / 0.13);
+  --accent-line: rgb(235 104 52 / 0.4);
+
+  --graph-radial: oklch(0.985 0.006 85 / 0.7);
+  --glass-bg: oklch(0.99 0.004 85 / 0.74);
+  --glass-bg-strong: oklch(0.99 0.004 85 / 0.88);
+  --scrim: oklch(0.97 0.004 85 / 0.6);
+
+  --shadow-sm: 0 2px 8px oklch(0 0 0 / 0.08);
+  --shadow: 0 12px 32px oklch(0 0 0 / 0.12);
+  --shadow-lg: 0 24px 64px oklch(0 0 0 / 0.18);
+  --inner-hi: inset 0 1px 0 oklch(1 0 0 / 0.7);
+
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.mono {
+  font-family: var(--mono);
+  font-variant-ligatures: none;
+}
+
+/* Visually hidden, but reachable by keyboard and screen readers. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.sr-only-focusable:focus-within {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  width: min(420px, calc(100% - 24px));
+  height: auto;
+  max-height: min(70vh, 620px);
+  overflow-y: auto;
+  margin: 0;
+  padding: 12px 14px;
+  clip: auto;
+  white-space: normal;
+  z-index: var(--z-toast);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-lg);
+}
+.sr-only-focusable:focus-within h2 {
+  font-size: 13px;
+  margin: 0 0 6px;
+}
+.sr-only-focusable:focus-within p {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+}
+.sr-only-focusable:focus-within ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sr-only-focusable:focus-within li button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  padding: 6px 9px;
+  color: var(--text);
+  font-size: 12.5px;
+}
+.sr-only-focusable:focus-within li button:hover,
+.sr-only-focusable:focus-within li button:focus-visible {
+  background: var(--surface-3);
+  border-color: var(--border-strong);
+}
+
+/* ============================================================================
+   App shell
+   ========================================================================== */
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--surface);
+}
+
+.app-header h1 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.app-header .dim {
+  color: var(--text-faint);
+  font-weight: 400;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  justify-content: flex-end;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.legend-count {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
+.empty-state {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+}
+
+.empty-state h1 {
+  font-size: 16px;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+
+.empty-state .hint {
+  font-size: 12.5px;
+  color: var(--text-faint);
+}
+
+/* ============================================================================
+   Graph panel
+   ========================================================================== */
+
+.panel-graph {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  background:
+    radial-gradient(80% 60% at 50% 40%, var(--graph-radial), transparent 70%),
+    var(--bg);
+}
+
+.graph-toolbar {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: var(--z-toolbar);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: var(--r);
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow), var(--inner-hi);
+}
+
+.graph-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  max-width: 340px;
+}
+
+.graph-search-wrap svg {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.graph-search {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 12px 8px 34px;
+  color: var(--text);
+  outline: none;
+  font-size: 13px;
+  transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+
+.graph-search::placeholder {
+  color: var(--text-faint);
+}
+
+.graph-search:focus {
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 11px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all var(--t-fast) var(--ease);
+}
+
+.tool-btn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--surface-3);
+}
+
+.tool-btn.accent {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.tool-count {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-faint);
+  padding-right: 4px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.graph-canvas-wrap {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.graph-canvas-wrap canvas {
+  cursor: grab;
+}
+.graph-canvas-wrap canvas:active {
+  cursor: grabbing;
+}
+
+.search-miss {
+  position: absolute;
+  top: 62px;
+  left: 14px;
+  z-index: var(--z-toolbar);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: calc(100% - 28px);
+  padding: 7px 12px;
+  border-radius: var(--r-sm);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-sm);
+  font-size: 12px;
+  color: var(--text-muted);
+  animation: pop var(--t) var(--ease);
+}
+
+.search-miss .mono {
+  color: var(--text);
+}
+
+/* Node inspector */
+.inspector {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  width: min(340px, calc(100% - 32px));
+  max-height: calc(100% - 100px);
+  overflow-y: auto;
+  z-index: var(--z-inspector);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-lg), var(--inner-hi);
+  animation: pop var(--t) var(--ease);
+}
+
+.inspector-top {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 10px;
+}
+
+.type-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.type-tag .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.inspector-id {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.inspector-close {
+  margin-left: auto;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 7px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  color: var(--text-faint);
+  transition: all var(--t-fast) var(--ease);
+}
+
+.inspector-close:hover {
+  color: var(--text);
+  background: var(--surface-3);
+}
+
+.inspector-label {
+  font-size: 14.5px;
+  font-weight: 500;
+  margin: 0 0 8px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.inspector-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+}
+
+.inspector-source {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+  margin: 0 0 4px;
+}
+
+.inspector-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 10px 0 6px;
+}
+
+.inspector-neighbors {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.neighbor-link {
+  text-align: left;
+  background: var(--surface-2);
+  border: none;
+  border-left: 3px solid transparent;
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  padding: 5px 9px;
+  font-size: 12px;
+  color: var(--text);
+  transition: background var(--t-fast) var(--ease);
+}
+
+.neighbor-link:hover {
+  background: var(--surface-3);
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.985) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
